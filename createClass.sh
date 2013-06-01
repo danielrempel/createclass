@@ -2,14 +2,17 @@
 
 # author: danil.rempel <danil.rempel@gmail.com>
 
-VERSION="0.5"
-# version 0.5
+VERSION="0.6"
+# version 0.6
 # 0.2: added uppercasing in "ifndef HAVE_CLASSNAME_HPP" statement
 # 0.3: added --relative. it isn't enough useful, but i hope, someone will like it:)
 #		note: it isn't sensitive to arguments order
 #		but any non-"--relative" text it will treat as class name
 # 0.4: checks if class definition or implementation files exist and dies if any
 # 0.5: added ';' after class definiton ^_^'', (changed CPP to HPP in include lock)
+# 0.6: added "class CLASSNAME;" statement after include lock. I use it
+#		to prevent recursive includes when classes are not found
+#		added "public:" and "private:" lines to class definition body
 
 SRCDIR=src
 INCDIR=include
@@ -55,9 +58,11 @@ function allok () {
 	toClass=`echo $1 | awk '{print toupper($0)}' `;
 	echo -e "#ifndef HAVE_${toClass}_HPP" >> $INCDIR/$1.hpp;
 	echo -e "#define HAVE_${toClass}_HPP" >> $INCDIR/$1.hpp;
+	echo -e "class $1;" >> $INCDIR/$1.hpp;
 	echo -e "" >> $INCDIR/$1.hpp;   
 	echo -e "class $1 {" >> $INCDIR/$1.hpp;
-	echo -e "" >> $INCDIR/$1.hpp;
+	echo -e "	public:" >> $INCDIR/$1.hpp;   
+	echo -e "	private:" >> $INCDIR/$1.hpp;   
 	echo -e "};" >> $INCDIR/$1.hpp;
 	echo -e "" >> $INCDIR/$1.hpp;
 	echo -e "#endif" >> $INCDIR/$1.hpp;
