@@ -75,6 +75,7 @@ else
 			echo -e "\t --relative: when passed classes are created with"
 			echo -e "\trelative includes (include \"file.hpp\"), else"
 			echo -e "\tfiles are created with global includes (include <file.hpp>)"
+			exit 0;
 	fi;
 	allok $@;
 fi;
