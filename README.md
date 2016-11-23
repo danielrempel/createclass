@@ -4,9 +4,10 @@ And here it is. It is as simple, as it could be:
 $ createClass \<classname\>  
 ..and it creates cpp & hpp files in current directory.  
 
-The script may receive up to three parameters:
->>[-s] [<dir>] <classname>
+The script may receive up to three parameters:  
+``[-s] [<dir>] <classname> | --help``  
 Where:
- * -s -- create a singleton class
- * <dir> -- directory to put sources and headers into
- * <classname> -- the name of the class to be created
+ * ``-s`` -- create a singleton class
+ * ``<dir>`` -- directory to put sources and headers into
+ * ``<classname>`` -- the name of the class to be created
+ * ``--help`` -- prints a help message with similair content
