@@ -2,15 +2,11 @@
   
 And here it is. It is as simple, as it could be:  
 $ createClass \<classname\>  
-..and it creates cpp & hpp files in corresponding directories.  
-For example:  
-$ createClass Rubidium  
-creates:  
-src/Rubidium.cpp  
-include/Rubidium.hpp  
-with appropriate contents.  
-  
-Directories are defined on top of script with SRCDIR and INCDIR variables.  
-  
-Also it recognizes --relative flag that is defining that the tool should create class source files with relative includes, not with global (include <filename.hpp>).
+..and it creates cpp & hpp files in current directory.  
 
+The script may receive up to three parameters:
+>>[-s] [<dir>] <classname>
+Where:
+ * -s -- create a singleton class
+ * <dir> -- directory to put sources and headers into
+ * <classname> -- the name of the class to be created

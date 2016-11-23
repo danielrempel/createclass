@@ -2,8 +2,7 @@
 
 # author: danil.rempel <danil.rempel@gmail.com>
 
-VERSION="0.6"
-# version 0.6
+VERSION="0.9"
 # 0.2: added uppercasing in "ifndef HAVE_CLASSNAME_HPP" statement
 # 0.3: added --relative. it isn't enough useful, but i hope, someone will like it:)
 #		note: it isn't sensitive to arguments order
@@ -13,74 +12,135 @@ VERSION="0.6"
 # 0.6: added "class CLASSNAME;" statement after include lock. I use it
 #		to prevent recursive includes when classes are not found
 #		added "public:" and "private:" lines to class definition body
+# 0.7: return to ordinary way: only one src dir, all sources have relative (within one directory paths)
+# 0.8: rewritten, simplified
+# 0.9: add a key to create a singleton class
 
-SRCDIR=src
-INCDIR=include
+function create () {
+	
+	HEADER_FILE=$3.hpp
+	HEADER=$2/${HEADER_FILE}
+	SOURCE=$2/$3.cpp
+	CLASS=$3
+	UCLASS=`echo $3 | awk '{print toupper($0)}'`
+	if [ -e "${HEADER}" -o -e "${SOURCE}" ];
+	then
+		echo "File(s) already exist: ${HEADER}, ${SOURCE}"
+		exit 1;
+	fi
+	
+	touch ${HEADER}
+	
+	cat >> $HEADER <<EOF
+#ifndef __HAVE_${UCLASS}_HPP__
+#define __HAVE_${UCLASS}_HPP__
+class ${CLASS};
 
-function allok () {
-	if [ $1 == "--relative" ];
-		then rel="t"
-			arg=$2;
-		else rel="f"
-			arg=$1;
-	fi;
-	if [ ! -z $2 ];
+class ${CLASS}
+{
+EOF
+
+	if [ "$1" == "1" ];
 	then
-		if [ $2 == "--relative" ];
-		then rel="t";
-		fi;
-	#else rel="f";
-	fi;
-	if [ -z $arg ];
+		cat >> $HEADER <<EOF
+	public: // Singleton stuff
+		static ${CLASS}& getInstance();
+		${CLASS}(${CLASS} const&)			= delete;
+		void operator=(${CLASS} const&)		= delete;
+EOF
+	fi
+	
+	cat >> $HEADER <<EOF
+
+	public:
+		${CLASS}();
+		virtual ~${CLASS}();
+	protected:
+	private:
+};
+
+#endif // __HAVE_${UCLASS}_HPP__
+EOF
+	
+	touch ${SOURCE}
+	
+	cat >> $SOURCE <<EOF
+#include "${HEADER_FILE}"
+EOF
+
+	if [ "$1" == "1" ];
 	then
-		echo "Usage: $0 [--relative] <classname>"
-		exit 1;
-	fi;
-	#echo "Arg: $arg";
+		cat >> $SOURCE <<EOF
+
+${CLASS}& ${CLASS}::getInstance()
+{
+	// according to loki-astari@stackoverflow,
+	// this way the singleton is guaranteed to
+	// be destroyed
+	static ${CLASS} instance;
+	return instance;
+}
+EOF
+	fi
+
+	cat >> $SOURCE <<EOF
+
+${CLASS}::${CLASS}()
+{
 	
-	if [ -e "$SRCDIR/$1.cpp" ];
-	then echo "$0: $SRCDIR/$1.cpp exists"
-		exit 1;
-	fi;
-	if [ -e "$INCDIR/$1.hpp" ];
-	then echo "$0: $INCDIR/$1.hpp exists"
-		exit 1;
-	fi;
+}
+
+${CLASS}::~${CLASS}()
+{
 	
-	touch $SRCDIR/$1.cpp;
+}
+EOF
 	
-	if [ "t" == $rel ];
-	then echo -e "#include \"../$INCDIR/$1.hpp\"" >> $SRCDIR/$1.cpp;
-	else echo -e "#include <$1.hpp>" >> $SRCDIR/$1.cpp;
-	fi;
+}
+
+function parse () {
+	if [ "$1" == "--help" ];
+	then
+		# show help text
+		echo "Class creation tool v${VERSION}"
+		echo "Creates C++ classes with base headers in given directory"
+		echo "Usage: $0 <dir> <classname> | $0 <classname>"
+		exit 0;
+	fi
+	if [ "$1" == "-s" ]
+	then
+		# create a singleton class
+		SINGLETON=1
+		if [ -z "$3" ];
+		then
+			# createclass <classname>
+			DIR=.
+			CLASS=$2
+		else
+			# createclass <dir> <classname>
+			DIR=$2
+			CLASS=$3
+		fi
+	else
+		SINGLETON=0
+		if [ -z "$2" ];
+		then
+			# createclass <classname>
+			DIR=.
+			CLASS=$1
+		else
+			# createclass <dir> <classname>
+			DIR=$1
+			CLASS=$2
+		fi
+	fi
 	
-	touch $INCDIR/$1.hpp;
-	toClass=`echo $1 | awk '{print toupper($0)}' `;
-	echo -e "#ifndef HAVE_${toClass}_HPP" >> $INCDIR/$1.hpp;
-	echo -e "#define HAVE_${toClass}_HPP" >> $INCDIR/$1.hpp;
-	echo -e "class $1;" >> $INCDIR/$1.hpp;
-	echo -e "" >> $INCDIR/$1.hpp;   
-	echo -e "class $1 {" >> $INCDIR/$1.hpp;
-	echo -e "	public:" >> $INCDIR/$1.hpp;   
-	echo -e "	private:" >> $INCDIR/$1.hpp;   
-	echo -e "};" >> $INCDIR/$1.hpp;
-	echo -e "" >> $INCDIR/$1.hpp;
-	echo -e "#endif" >> $INCDIR/$1.hpp;
-	
+	create $SINGLETON $DIR $CLASS
 }
 
 if [ -z $1 ];
 then 
-	echo "Usage: $0 [--relative] <classname> | $0 --help"
+	echo "Usage: $0 [-s] [<dir>] <classname> | $0 --help"
 else
-	if [ $1 == "--help" ];
-		then echo "Class creation tool v${VERSION}"
-			echo "Creates C++ classes with base headers in configured directories (src/, include/)"
-			echo "Usage: $0 [--relative] <classname>"
-			echo -e "\t --relative: when passed classes are created with"
-			echo -e "\trelative includes (include \"file.hpp\"), else"
-			echo -e "\tfiles are created with global includes (include <file.hpp>)"
-			exit 0;
-	fi;
-	allok $@;
-fi;
+	parse $@
+fi
